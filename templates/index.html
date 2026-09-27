@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <h1>Personal Tracker</h1>
+
+    <div class="dashboard">
+
+        <section class="card quadrant-add">
+            <h2>Add Expense</h2>
+            <form action="/add" method="post">
+                <label for="name">Expense name:</label>
+                <input type="text" id="name" placeholder="Enter expense name" name="name" required>
+
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" placeholder="Enter amount" name="amount" step="0.01" min="0" required>
+
+                <label for="category">Category:</label>
+                <select name="category" id="category">
+                    <option value="Food">Food</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Internet">Internet</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <button type="submit">Add Expense</button>
+            </form>
+        </section>
+
+        <section class="card quadrant-stats">
+            <h2>Statistics</h2>
+            {% if stats %}
+                <div class="statistics">
+                    <div><h3>Total Spent</h3><p>₦{{ stats['total'] }}</p></div>
+                    <div><h3>Total Expenses</h3><p>{{ stats['count'] }}</p></div>
+                    <div><h3>Food</h3><p>{{ stats['Food'] }}</p></div>
+                    <div><h3>Transport</h3><p>{{ stats['Transport'] }}</p></div>
+                    <div><h3>Internet</h3><p>{{ stats['Internet'] }}</p></div>
+                    <div><h3>Other</h3><p>{{ stats['Other'] }}</p></div>
+                </div>
+            {% else %}
+                <p>No expenses to display statistics.</p>
+            {% endif %}
+        </section>
+
+        <section class="card quadrant-search">
+            <h2>Search Expense</h2>
+            <form action="/search" method="get">
+                <label for="search-name">Expense name:</label>
+                <input type="text" id="search-name" name="name" placeholder="Enter expense name" required>
+                <button type="submit">Search</button>
+            </form>
+
+            {% if search_name %}
+                <h3>Search Result</h3>
+                {% if search_result %}
+                    <div class="search-result">
+                        <h3>{{ search_name }}</h3>
+                        <p>Amount: ₦{{ search_result['amount'] }}</p>
+                        <p>Category: {{ search_result['category'] }}</p>
+                        <p>Date: {{ search_result['date_time'] }}</p>
+                    </div>
+                {% else %}
+                    <p>Expense "{{ search_name }}" was not found.</p>
+                {% endif %}
+            {% endif %}
+        </section>
+
+        <section class="card chart-section quadrant-chart">
+            <h2>Expense Categories</h2>
+            <canvas id="categoryChart"></canvas>
+        </section>
+
+    </div>
+
+    <section class="expenses-section">
+        <h2>My Expenses</h2>
+
+        {% if expenses %}
+            {% for name, details in expenses.items() %}
+                <div class="expense">
+                    <h3>{{ name }}</h3>
+                    <p>Amount: ₦{{ details['amount'] }}</p>
+                    <p>Category: {{ details['category'] }}</p>
+                    <p>Date: {{ details['date_time'] }}</p>
+
+                    <div class="expense-actions">
+                        <form action="/update/{{ name }}" method="post">
+                            <label for="update-amount-{{ name }}">Amount:</label>
+                            <input type="number" id="update-amount-{{ name }}" name="amount" value="{{ details['amount'] }}" step="0.01" min="0" required>
+
+                            <label for="update-category-{{ name }}">Category:</label>
+                            <select name="category" id="update-category-{{ name }}">
+                                <option value="Food" {% if details['category'] == 'Food' %}selected{% endif %}>Food</option>
+                                <option value="Transport" {% if details['category'] == 'Transport' %}selected{% endif %}>Transport</option>
+                                <option value="Internet" {% if details['category'] == 'Internet' %}selected{% endif %}>Internet</option>
+                                <option value="Other" {% if details['category'] == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+
+                            <button type="submit" class="update-btn">Update</button>
+                        </form>
+
+                        <form action="/delete/{{ name }}" method="post">
+                            <button type="submit" class="delete-btn">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No expenses to display.</p>
+        {% endif %}
+    </section>
+
+    <script>
+        const categoryData = {
+            Food: {{ stats['Food'] if stats else 0 }},
+            Transport: {{ stats['Transport'] if stats else 0 }},
+            Internet: {{ stats['Internet'] if stats else 0 }},
+            Other: {{ stats['Other'] if stats else 0 }}
+        };
+
+        const flashMessages = {{ get_flashed_messages(with_categories=true) | tojson }};
+    </script>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
